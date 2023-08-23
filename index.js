@@ -12,12 +12,24 @@ app.get("/", function (_req, res) {
 });
 
 app.get('/ping', (req, res) => {
-  res.send(process.env)
+  res.status(200).json({ message: 'Ping successful' });
 });
 
 /* ----- ESSENTIALS ----- */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+function keepAppRunning() {
+  setInterval(() => {
+    http.get(`${process.env.RENDER_EXTERNAL_URL}/ping`, (resp) => {
+      if (resp.statusCode === 200) {
+        console.log('Ping successful');
+      } else {
+        console.error('Ping failed');
+      }
+    });
+  }, 5 * 60 * 1000); // 5 minutes in milliseconds
+}
 
 /* ----- MAGIC ----- */
 app.post("/webhook", (req, res) => {
@@ -94,4 +106,7 @@ const onMessage = async (senderId, message) => {
 
 const onPostBack = async (senderId, message, postback) => {};
 /* ----- HANDELS ----- */
-app.listen(3000, () => console.log(`App is on port : 3000`));
+app.listen(3000, () => {
+  console.log(`App is on port : 3000`);
+  keepAppRunning();
+});
