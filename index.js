@@ -10,6 +10,11 @@ const botly = new Botly({
 app.get("/", function (_req, res) {
   res.sendStatus(200);
 });
+
+app.get('/ping', (req, res) => {
+  res.send(process.env)
+});
+
 /* ----- ESSENTIALS ----- */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
