@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const Botly = require("botly");
 const axios = require("axios");
-const http = require('http');
+const https = require('https');
 const botly = new Botly({
   accessToken: process.env.PAGE_ACCESS_TOKEN,
   notificationType: Botly.CONST.REGULAR,
@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: false }));
 
 function keepAppRunning() {
   setInterval(() => {
-    http.get(`${process.env.RENDER_EXTERNAL_URL}/ping`, (resp) => {
+    https.get(`${process.env.RENDER_EXTERNAL_URL}/ping`, (resp) => {
       if (resp.statusCode === 200) {
         console.log('Ping successful');
       } else {
