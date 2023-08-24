@@ -102,7 +102,7 @@ const onMessage = async (senderId, message) => {
       botly.sendButtons(
         {
           id: senderId,
-          text: "جاري البحث عن الصور المشابهة 👁️‍🗨️ ...",
+          text: "جاري البحث عن الصور المشابهة 👁️‍🗨️...",
           buttons: [botly.createWebURLButton("NOTI 💻", "facebook.com/0xNoti/")],
         },
         async () => {
