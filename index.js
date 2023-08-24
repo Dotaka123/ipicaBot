@@ -3,6 +3,8 @@ const app = express();
 const Botly = require("botly");
 const axios = require("axios");
 const https = require('https');
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SB_URL, process.env.SB_KEY, { auth: { persistSession: false} });
 const botly = new Botly({
   accessToken: process.env.PAGE_ACCESS_TOKEN,
   notificationType: Botly.CONST.REGULAR,
@@ -32,6 +34,46 @@ function keepAppRunning() {
   }, 5 * 60 * 1000); // 5 minutes in milliseconds
 }
 
+/* ----- DB Qrs ----- */
+
+async function createUser(user) {
+  const { data, error } = await supabase
+      .from('users')
+      .insert([ user ]);
+
+    if (error) {
+      throw new Error('Error creating user : ', error);
+    } else {
+      return data
+    }
+};
+
+async function updateUser(id, update) {
+  const { data, error } = await supabase
+    .from('users')
+    .update( update )
+    .eq('uid', id);
+
+    if (error) {
+      throw new Error('Error updating user : ', error);
+    } else {
+      return data
+    }
+};
+
+async function userDb(userId) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('uid', userId);
+
+  if (error) {
+    console.error('Error checking user:', error);
+  } else {
+    return data
+  }
+};
+
 /* ----- MAGIC ----- */
 app.post("/webhook", (req, res) => {
   // console.log(req.body)
@@ -50,57 +92,71 @@ app.post("/webhook", (req, res) => {
 /* ----- HANDELS ----- */
 
 const onMessage = async (senderId, message) => {
-  if (message.message.text) {
-    // message.message.text
-  } else if (message.message.attachments[0].payload.sticker_id) {
-    //botly.sendText({id: senderId, text: "(Y)"});
-  } else if (message.message.attachments[0].type == "image") {
-    botly.sendButtons(
-      {
-        id: senderId,
-        text: "جاري البحث",
-        buttons: [botly.createWebURLButton("NOTI 💻", "facebook.com/0xNoti/")],
-      },
-      async () => {
-        try {
-          const response = await axios.get(`https://zeroxipica.onrender.com/search?imageUrl=${encodeURIComponent(message.message.attachments[0].payload.url,)}`,
-            {
-              headers: {
-                "Content-Type": "application/json",
+  const user = await userDb(senderId);
+  if (user[0]) {
+    if (message.message.text) {
+      botly.sendText({id: senderId, text: "سيتم تفعيل ميزة البحث 🔍 عند وصول الصفحة 2000 متابع 👥"});
+    } else if (message.message.attachments[0].payload.sticker_id) {
+      //botly.sendText({id: senderId, text: "(Y)"});
+    } else if (message.message.attachments[0].type == "image") {
+      botly.sendButtons(
+        {
+          id: senderId,
+          text: "جاري البحث عن الصور المشابهة 👁️‍🗨️ ...",
+          buttons: [botly.createWebURLButton("NOTI 💻", "facebook.com/0xNoti/")],
+        },
+        async () => {
+          try {
+            const response = await axios.get(`https://zeroxipica.onrender.com/search?imageUrl=${encodeURIComponent(message.message.attachments[0].payload.url,)}`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                },
               },
-            },
-          );
+            );
+  
+            if (response.data.data[0]) {
+              const photoUrls = response.data.data.map((x) => x.image_large_url);
+              
+              const sendPhotosWithDelay = async () => {
+                for (const url of photoUrls) {
+                  await new Promise((resolve) => setTimeout(resolve, 1000));
+                  botly.sendAttachment(
+                    {
+                      id: senderId,
+                      type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
+                      payload: { url: url },
+                    },
+                    () => {},
+                  );
+                }
+              };
 
-          if (response.data.data[0]) {
-            const photoUrls = response.data.data.map((x) => x.image_large_url);
-            
-            const sendPhotosWithDelay = async () => {
-              for (const url of photoUrls) {
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-                botly.sendAttachment(
-                  {
-                    id: senderId,
-                    type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
-                    payload: { url: url },
-                  },
-                  () => {},
-                );
-              }
-            };
-
-            sendPhotosWithDelay();
-          } else {
-            botly.sendText({ id: senderId, text: "400" });
+              sendPhotosWithDelay();
+            } else {
+              botly.sendText({ id: senderId, text: "لا يوجد أي تطابق على Pinterest 😓\n• أسباب محتملة 🤔 : \n- الصورة غير موجودة 🚫.\n- الصورة غير واضحة 🫧📱.\n- الصورة غير مناسبة 🔞." });
+            }
+          } catch (error) {
+            console.error("Error:", error.response.status);
           }
-        } catch (error) {
-          console.error("Error:", error.response.status);
-        }
-      },
-    );
-  } else if (message.message.attachments[0].type == "audio") {
-    botly.sendText({ id: senderId, text: "المرجو إستعمال النصوص و الصور فقط" });
-  } else if (message.message.attachments[0].type == "video") {
-    botly.sendText({ id: senderId, text: "المرجو إستعمال النصوص و الصور فقط" });
+        },
+      );
+    } else if (message.message.attachments[0].type == "audio") {
+      botly.sendText({ id: senderId, text: "لا يمكن للصفحة البحث بالصوت 🙅‍♂️" });
+    } else if (message.message.attachments[0].type == "video") {
+      botly.sendText({ id: senderId, text: "لا يمكن للصفحة البحث بالفيديوهات 🙅" });
+    }
+  } else {
+    await createUser({uid: senderId})
+            .then((data, error) => {
+              botly.sendButtons({
+                id: senderId,
+                text: "أهلا بك في أول صفحة تبحث لك عن الصور في بينترست 📌🤩\n• الميزات 🚀 :\n- بحث بالصور (Pinterest) ✅.\n- بحث بالكلمات (يفتح عند وصول الصفحة 2k). ⌛️\n• ميزات قيد العمل ⚙️ :\n- بحث جوجل.\n- بحث صور (Google).\n- بحث صور (Yandex).\n- جملة الى صورة (Ai).\n• ملاحظة 📝 :\nالصفحة معرضة للتوقف 🚫 في أي وقت. لأسباب قد تكون في إرداتنا أو خارج إرادتنا.\nلضمان إستمرار الصفحة لا تنسى متابعة الصفحة 👥 أو مشاركتها مع أصدقائك 🤍",
+                buttons: [
+                  botly.createWebURLButton("حساب المطور 💻👤", "facebook.com/0xNoti/"),
+                ],
+              });
+            });
   }
 };
 /* ----- POSTBACK ----- */
