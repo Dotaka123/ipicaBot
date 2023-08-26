@@ -95,8 +95,6 @@ const onMessage = async (senderId, message) => {
   const user = await userDb(senderId);
   if (user[0]) {
     if (message.message.text) {
-      botly.sendText({id: senderId, text: "يجري إعتماد التصحيح الان"});
-      /*
       if (message.message.text.length < 60) {
         if (message.message.text.length == 1) {
           botly.sendText({id: senderId, text: "إستعمل أكثر من حرف للبحث 😐"});
@@ -111,11 +109,11 @@ const onMessage = async (senderId, message) => {
                 "title":"Pinterest",
                 "image_url":"https://i.ibb.co/YDqqY0P/pinetrest.png",
                 "payload": message.message.text,
-              },{
+              },/*{
                 "content_type":"text",
                 "title":"",
                 "payload":"",
-              }
+              }*/
             ]
           }
           });
@@ -123,7 +121,6 @@ const onMessage = async (senderId, message) => {
       } else {
         botly.sendText({id: senderId, text: "لا يمكن البحث بعبارات طويلة 🤷🏻‍♂️ جرب البحث عن أشياء موجودة"});
       }
-      */
     } else if (message.message.attachments[0].payload.sticker_id) {
       //botly.sendText({id: senderId, text: "(Y)"});
     } else if (message.message.attachments[0].type == "image") {
@@ -218,7 +215,7 @@ const onPostBack = async (senderId, message, postback) => {
       try {
         const response = await axios.get(`https://zeroxipica.onrender.com/text?q=${encodeURIComponent(postback)}`,
               { headers: { "Content-Type": "application/json" }});
-              if (response.data.sensitivity != undefined) {
+              if (response.data.code == 18) {
                 botly.sendButtons({
                   id: senderId,
                   text: "لا يمكننا البحث عن هذا النوع من الصور 🤷🏻‍♂️🔞\nاذا كنت تعتقد أن هنالك خطأ راسل المطور 💻👇🏻",
@@ -226,33 +223,45 @@ const onPostBack = async (senderId, message, postback) => {
                     botly.createWebURLButton("حساب المطور 💻👤", "facebook.com/0xNoti/"),
                   ],
                 });
-              } else {
-                if (response.data.data && Array.isArray(response.data.data)) {
-                  const photoUrls = response.data.data
-                    .filter((x) => x.image_large_url)
-                    .map((x) => x.image_large_url);
-                  if (photoUrls.length === 0) {
-                    botly.sendText({ id: senderId, text: "لا يوجد نتيجة" });
+              } else if (response.data.code == 0) {
+                if (response.data.images && Array.isArray(response.data.images)) {
+                  const images = response.data.images;
+                  const numImagesToSend = Math.min(images.length, 6);
+                
+                  if (numImagesToSend === 0) {
+                    botly.sendText({ id: senderId, text: "لا يوجد نتائج" });
                   } else {
-                    const sendPhotosWithDelay = async () => {
-                      for (const url of photoUrls) {
+                    const shuffledImages = shuffleArray(images);
+                
+                    const sendImagesWithDelay = async () => {
+                      for (let i = 0; i < numImagesToSend; i++) {
+                        const url = shuffledImages[i].url;
                         await new Promise((resolve) => setTimeout(resolve, 1000));
-                        botly.sendAttachment(
-                          {
+                        botly.sendAttachment({
                             id: senderId,
                             type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
                             payload: { url: url },
                           },
-                          () => {},
-                        );
+                          () => {});
                       }
                     };
                 
-                    sendPhotosWithDelay();
+                    sendImagesWithDelay();
                   }
                 } else {
-                  botly.sendText({ id: senderId, text: "لا يوجد نتيجة" });
+                  botly.sendText({ id: senderId, text: "لا يوجد نتائج" });
                 }
+                
+                function shuffleArray(array) {
+                  const shuffled = array.slice();
+                  for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                  }
+                  return shuffled;
+                }
+              } else {
+                botly.sendText({ id: senderId, text: "لا يوجد نتيجة" });
               }
       } catch (error) {
         console.error("Error:", error.response.status);
