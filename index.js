@@ -96,24 +96,28 @@ const onMessage = async (senderId, message) => {
   if (user[0]) {
     if (message.message.text) {
       if (message.message.text.length < 60) {
-              botly.send({
-                "id": senderId,
-                "message": {
-                "text": "أين تريد البحث ؟",
-                "quick_replies":[
-                  {
-                    "content_type":"text",
-                    "title":"Pinterest",
-                    "image_url":"https://i.ibb.co/YDqqY0P/pinetrest.png",
-                    "payload": message.message.text,
-                  },/*{
-                    "content_type":"text",
-                    "title":"",
-                    "payload":"",
-                  }*/
-                ]
-              }
-              });
+        if (message.message.text.length == 1) {
+          botly.sendText({id: senderId, text: "إستعمل أكثر من حرف للبحث"});
+        } else {
+          botly.send({
+            "id": senderId,
+            "message": {
+            "text": "أين تريد البحث ؟",
+            "quick_replies":[
+              {
+                "content_type":"text",
+                "title":"Pinterest",
+                "image_url":"https://i.ibb.co/YDqqY0P/pinetrest.png",
+                "payload": message.message.text,
+              },/*{
+                "content_type":"text",
+                "title":"",
+                "payload":"",
+              }*/
+            ]
+          }
+          });
+        }
       } else {
         botly.sendText({id: senderId, text: "لا يمكن البحث بعبارات طويلة الرجاء إستعمال عبارات قصيرة و محددة"});
       }
