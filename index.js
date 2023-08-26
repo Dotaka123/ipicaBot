@@ -95,7 +95,28 @@ const onMessage = async (senderId, message) => {
   const user = await userDb(senderId);
   if (user[0]) {
     if (message.message.text) {
-      botly.sendText({id: senderId, text: "جاري العمل على الميزة الان ستتوفر قريبا ♥"});
+      if (message.message.text.length < 60) {
+              botly.send({
+                "id": senderId,
+                "message": {
+                "text": "أين تريد البحث ؟",
+                "quick_replies":[
+                  {
+                    "content_type":"text",
+                    "title":"Pinterest",
+                    "image_url":"https://i.ibb.co/YDqqY0P/pinetrest.png",
+                    "payload": message.message.text,
+                  },/*{
+                    "content_type":"text",
+                    "title":"",
+                    "payload":"",
+                  }*/
+                ]
+              }
+              });
+      } else {
+        botly.sendText({id: senderId, text: "لا يمكن البحث بعبارات طويلة الرجاء إستعمال عبارات قصيرة و محددة"});
+      }
     } else if (message.message.attachments[0].payload.sticker_id) {
       //botly.sendText({id: senderId, text: "(Y)"});
     } else if (message.message.attachments[0].type == "image") {
@@ -161,7 +182,9 @@ const onMessage = async (senderId, message) => {
 };
 /* ----- POSTBACK ----- */
 
-const onPostBack = async (senderId, message, postback) => {};
+const onPostBack = async (senderId, message, postback) => {
+  botly.sendText({ id: senderId, text: "تحت العمل الان" });
+};
 /* ----- HANDELS ----- */
 app.listen(3000, () => {
   console.log(`App is on port : 3000`);
