@@ -95,7 +95,7 @@ const onMessage = async (senderId, message) => {
   const user = await userDb(senderId);
   if (user[0]) {
     if (message.message.text) {
-      botly.sendText({id: senderId, text: "سيتم تفعيل ميزة البحث 🔍 عند وصول الصفحة 2000 متابع 👥"});
+      botly.sendText({id: senderId, text: "جاري العمل على الميزة الان ستتوفر قريبا ♥"});
     } else if (message.message.attachments[0].payload.sticker_id) {
       //botly.sendText({id: senderId, text: "(Y)"});
     } else if (message.message.attachments[0].type == "image") {
