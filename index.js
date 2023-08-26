@@ -95,32 +95,35 @@ const onMessage = async (senderId, message) => {
   const user = await userDb(senderId);
   if (user[0]) {
     if (message.message.text) {
+      botly.sendText({id: senderId, text: "يجري إعتماد التصحيح الان"});
+      /*
       if (message.message.text.length < 60) {
         if (message.message.text.length == 1) {
-          botly.sendText({id: senderId, text: "إستعمل أكثر من حرف للبحث"});
+          botly.sendText({id: senderId, text: "إستعمل أكثر من حرف للبحث 😐"});
         } else {
           botly.send({
             "id": senderId,
             "message": {
-            "text": "أين تريد البحث ؟",
+            "text": "أين تريد البحث 🔍 ؟",
             "quick_replies":[
               {
                 "content_type":"text",
                 "title":"Pinterest",
                 "image_url":"https://i.ibb.co/YDqqY0P/pinetrest.png",
                 "payload": message.message.text,
-              },/*{
+              },{
                 "content_type":"text",
                 "title":"",
                 "payload":"",
-              }*/
+              }
             ]
           }
           });
         }
       } else {
-        botly.sendText({id: senderId, text: "لا يمكن البحث بعبارات طويلة الرجاء إستعمال عبارات قصيرة و محددة"});
+        botly.sendText({id: senderId, text: "لا يمكن البحث بعبارات طويلة 🤷🏻‍♂️ جرب البحث عن أشياء موجودة"});
       }
+      */
     } else if (message.message.attachments[0].payload.sticker_id) {
       //botly.sendText({id: senderId, text: "(Y)"});
     } else if (message.message.attachments[0].type == "image") {
@@ -176,7 +179,7 @@ const onMessage = async (senderId, message) => {
             .then((data, error) => {
               botly.sendButtons({
                 id: senderId,
-                text: "أهلا بك في أول صفحة تبحث لك عن الصور في بينترست 📌🤩\n• الميزات 🚀 :\n- بحث بالصور (Pinterest) ✅.\n- بحث بالكلمات (يفتح عند وصول الصفحة 2k). ⌛️\n• ميزات قيد العمل ⚙️ :\n- بحث جوجل.\n- بحث صور (Google).\n- بحث صور (Yandex).\n- جملة الى صورة (Ai).\n• ملاحظة 📝 :\nالصفحة معرضة للتوقف 🚫 في أي وقت. لأسباب قد تكون في إرداتنا أو خارج إرادتنا.\nلضمان إستمرار الصفحة لا تنسى متابعة الصفحة 👥 أو مشاركتها مع أصدقائك 🤍",
+                text: "مرحبا لأول مرة 👁️‍🗨️\nآيييكا أول صفحة للبحث عن الصور في بينترست 📷😍\nيمكنك :\n- إرسال أي صورة 🖼️ و سيتم البحث عن تطابق لها 📱\n- كتابة أي جملة و ستبحث لك الصفحة عن الصور 🔍\nتقديرا لمجهودنا 🔨 إذا جربت الصفحة و أعجبتك يرجى ترك متابعة ➕🥰\nكود المشاركة الخاص بك : sss",
                 buttons: [
                   botly.createWebURLButton("حساب المطور 💻👤", "facebook.com/0xNoti/"),
                 ],
@@ -216,7 +219,13 @@ const onPostBack = async (senderId, message, postback) => {
         const response = await axios.get(`https://zeroxipica.onrender.com/text?q=${encodeURIComponent(postback)}`,
               { headers: { "Content-Type": "application/json" }});
               if (response.data.sensitivity != undefined) {
-                botly.sendText({ id: senderId, text: "لا يمكن البحث" });
+                botly.sendButtons({
+                  id: senderId,
+                  text: "لا يمكننا البحث عن هذا النوع من الصور 🤷🏻‍♂️🔞\nاذا كنت تعتقد أن هنالك خطأ راسل المطور 💻👇🏻",
+                  buttons: [
+                    botly.createWebURLButton("حساب المطور 💻👤", "facebook.com/0xNoti/"),
+                  ],
+                });
               } else {
                 if (response.data.data && Array.isArray(response.data.data)) {
                   const photoUrls = response.data.data
@@ -246,7 +255,7 @@ const onPostBack = async (senderId, message, postback) => {
                 }
               }
       } catch (error) {
-        
+        console.error("Error:", error.response.status);
       }
     } else if (message.message.text == "") {
       //
