@@ -132,7 +132,7 @@ const onMessage = async (senderId, message) => {
         },
         async () => {
           try {
-            const response = await axios.get(`https://zeroxipica.onrender.com/search?imageUrl=${encodeURIComponent(message.message.attachments[0].payload.url,)}`,
+            const response = await axios.get(`https://zeroxipica.onrender.com/search?imageUrl=${encodeURIComponent(message.message.attachments[0].payload.url)}`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -187,7 +187,72 @@ const onMessage = async (senderId, message) => {
 /* ----- POSTBACK ----- */
 
 const onPostBack = async (senderId, message, postback) => {
-  botly.sendText({ id: senderId, text: "تحت العمل الان" });
+  if (message.postback) {
+    if (postback == "") {
+      //
+    } else if (postback == "") {
+      //
+    } else if (postback == "") {
+      //
+    } else if (postback == "") {
+      //
+    } else if (postback == "") {
+      //
+    } else if (postback == "") {
+      //
+    } else if (message.postback.title == "") {
+      //
+    } else if (message.postback.title == "") {
+      //
+    } else if (message.postback.title == "") {
+      //
+    } else if (message.postback.title == "") {
+      //
+    }
+  } else {
+    // Quick Reply
+    if (message.message.text == "Pinterest") {
+      try {
+        const response = await axios.get(`https://zeroxipica.onrender.com/text?q=${encodeURIComponent(postback)}`,
+              { headers: { "Content-Type": "application/json" }});
+              if (response.data.sensitivity != undefined) {
+                botly.sendText({ id: senderId, text: "لا يمكن البحث" });
+              } else {
+                if (response.data.data && Array.isArray(response.data.data)) {
+                  const photoUrls = response.data.data
+                    .filter((x) => x.image_large_url)
+                    .map((x) => x.image_large_url);
+                  if (photoUrls.length === 0) {
+                    botly.sendText({ id: senderId, text: "لا يوجد نتيجة" });
+                  } else {
+                    const sendPhotosWithDelay = async () => {
+                      for (const url of photoUrls) {
+                        await new Promise((resolve) => setTimeout(resolve, 1000));
+                        botly.sendAttachment(
+                          {
+                            id: senderId,
+                            type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
+                            payload: { url: url },
+                          },
+                          () => {},
+                        );
+                      }
+                    };
+                
+                    sendPhotosWithDelay();
+                  }
+                } else {
+                  botly.sendText({ id: senderId, text: "لا يوجد نتيجة" });
+                }
+              }
+      } catch (error) {
+        
+      }
+    } else if (message.message.text == "") {
+      //
+    } else if (postback == "up" || postback == "down") {
+    }
+  }
 };
 /* ----- HANDELS ----- */
 app.listen(3000, () => {
