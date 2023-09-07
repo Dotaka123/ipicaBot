@@ -167,7 +167,10 @@ const onMessage = async (senderId, message) => {
         },
       );
     } else if (message.message.attachments[0].type == "audio") {
-      botly.sendText({ id: senderId, text: "لا يمكن للصفحة البحث بالصوت 🙅‍♂️" });
+      botly.sendText({id: senderId, text: "لا يمكن للصفحة البحث بالصوت 🙅‍♂️" }, function (err, data) {
+        console.log("Data :", data);
+        console.log("Err :", err);
+      });
     } else if (message.message.attachments[0].type == "video") {
       botly.sendText({ id: senderId, text: "لا يمكن للصفحة البحث بالفيديوهات 🙅" });
     }
