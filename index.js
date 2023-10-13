@@ -151,12 +151,23 @@ const onMessage = async (senderId, message) => {
                       id: senderId,
                       type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
                       payload: { url: url },
+                      "quick_replies":[
+                        {
+                          "content_type":"test",
+                          "title":"Pinterest",
+                          //"image_url":"https://i.ibb.co/YDqqY0P/pinetrest.png",
+                          "payload": "test",
+                        },/*{
+                          "content_type":"text",
+                          "title":"",
+                          "payload":"",
+                        }*/
+                      ]
                     },
                     () => {},
                   );
                 }
               };
-
               sendPhotosWithDelay();
             } else {
               botly.sendText({ id: senderId, text: "لا يوجد أي تطابق على Pinterest 😓\n• أسباب محتملة 🤔 : \n- الصورة غير موجودة 🚫.\n- الصورة غير واضحة 🫧📱.\n- الصورة غير مناسبة 🔞." });
