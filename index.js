@@ -246,6 +246,9 @@ const onPostBack = async (senderId, message, postback) => {
                             id: senderId,
                             type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
                             payload: { url: url },
+                            quick_replies: [
+                              botly.createQuickReply("قريبا !", "123"),
+                            ]
                           },
                           () => {});
                       }
