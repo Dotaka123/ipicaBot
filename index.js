@@ -151,17 +151,8 @@ const onMessage = async (senderId, message) => {
                       id: senderId,
                       type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
                       payload: { url: url },
-                      "quick_replies":[
-                        {
-                          "content_type":"test",
-                          "title":"Pinterest",
-                          //"image_url":"https://i.ibb.co/YDqqY0P/pinetrest.png",
-                          "payload": "test",
-                        },/*{
-                          "content_type":"text",
-                          "title":"",
-                          "payload":"",
-                        }*/
+                      quick_replies: [
+                        botly.createQuickReply("قريبا !", "123"),
                       ]
                     },
                     () => {},
