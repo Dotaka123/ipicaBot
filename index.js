@@ -15,7 +15,7 @@ app.get("/", function (_req, res) {
 });
 
 app.get('/ping', (req, res) => {
-  res.status(200).json({ message: 'Ping successful' });
+  res.status(200).json({ message: 'Ping réussi' });
 });
 
 /* ----- ESSENTIALS ----- */
@@ -26,12 +26,12 @@ function keepAppRunning() {
   setInterval(() => {
     https.get(`${process.env.RENDER_EXTERNAL_URL}/ping`, (resp) => {
       if (resp.statusCode === 200) {
-        console.log('Ping successful');
+        console.log('Ping réussi');
       } else {
-        console.error('Ping failed');
+        console.error('Échec du ping');
       }
     });
-  }, 5 * 60 * 1000); // 5 minutes in milliseconds
+  }, 5 * 60 * 1000); // 5 minutes en millisecondes
 }
 
 /* ----- DB Qrs ----- */
@@ -42,7 +42,7 @@ async function createUser(user) {
       .insert([ user ]);
 
     if (error) {
-      throw new Error('Error creating user : ', error);
+      throw new Error('Erreur lors de la création de l\'utilisateur : ', error);
     } else {
       return data
     }
@@ -55,7 +55,7 @@ async function updateUser(id, update) {
     .eq('uid', id);
 
     if (error) {
-      throw new Error('Error updating user : ', error);
+      throw new Error('Erreur lors de la mise à jour de l\'utilisateur : ', error);
     } else {
       return data
     }
@@ -68,15 +68,33 @@ async function userDb(userId) {
     .eq('uid', userId);
 
   if (error) {
-    console.error('Error checking user:', error);
+    console.error('Erreur lors de la vérification de l\'utilisateur:', error);
   } else {
     return data
   }
 };
 
 /* ----- MAGIC ----- */
+const VERIFY_TOKEN = "votre_token_de_verification"; // Ajout du token de vérification
+
+app.get('/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode && token) {
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+      console.log('Webhook vérifié');
+      res.status(200).send(challenge); // Retourner le challenge pour vérifier l'authenticité
+    } else {
+      res.status(403).send('Erreur de vérification du token');
+    }
+  } else {
+    res.status(400).send('Paramètres manquants');
+  }
+});
+
 app.post("/webhook", (req, res) => {
-  // console.log(req.body)
   if (req.body.message) {
     onMessage(req.body.message.sender.id, req.body.message);
   } else if (req.body.postback) {
@@ -97,29 +115,25 @@ const onMessage = async (senderId, message) => {
     if (message.message.text) {
       if (message.message.text.length < 60) {
         if (message.message.text.length == 1) {
-          botly.sendText({id: senderId, text: "إستعمل أكثر من حرف للبحث 😐"});
+          botly.sendText({id: senderId, text: "Utilisez plus d'un caractère pour rechercher 😐"});
         } else {
           botly.send({
             "id": senderId,
             "message": {
-            "text": "أين تريد البحث 🔍 ؟",
+            "text": "Où souhaitez-vous effectuer la recherche 🔍 ?",
             "quick_replies":[
               {
                 "content_type":"text",
                 "title":"Pinterest",
                 "image_url":"https://i.ibb.co/YDqqY0P/pinetrest.png",
                 "payload": message.message.text,
-              },/*{
-                "content_type":"text",
-                "title":"",
-                "payload":"",
-              }*/
+              },
             ]
           }
           });
         }
       } else {
-        botly.sendText({id: senderId, text: "لا يمكن البحث بعبارات طويلة 🤷🏻‍♂️ جرب البحث عن أشياء موجودة"});
+        botly.sendText({id: senderId, text: "La recherche ne peut pas être effectuée avec des phrases longues 🤷🏻‍♂️ Essayez de rechercher des choses spécifiques"});
       }
     } else if (message.message.attachments[0].payload.sticker_id) {
       //botly.sendText({id: senderId, text: "(Y)"});
@@ -127,8 +141,8 @@ const onMessage = async (senderId, message) => {
       botly.sendButtons(
         {
           id: senderId,
-          text: "جاري البحث عن الصور المشابهة 👁️‍🗨️...",
-          buttons: [botly.createWebURLButton("NOTI 💻", "facebook.com/0xNoti/")],
+          text: "Recherche d'images similaires en cours 👁️‍🗨️...",
+          buttons: [botly.createWebURLButton("NOTI 💻", "facebook.com/lahatra.gameur")],
         },
         async () => {
           try {
@@ -139,7 +153,7 @@ const onMessage = async (senderId, message) => {
                 },
               },
             );
-  
+
             if (response.data.data[0]) {
               const photoUrls = response.data.data.map((x) => x.image_large_url);
               
@@ -152,7 +166,7 @@ const onMessage = async (senderId, message) => {
                       type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
                       payload: { url: url },
                       quick_replies: [
-                        botly.createQuickReply("قريبا !", "123"),
+                        botly.createQuickReply("Bientôt !", "123"),
                       ]
                     },
                     () => {},
@@ -161,34 +175,35 @@ const onMessage = async (senderId, message) => {
               };
               sendPhotosWithDelay();
             } else {
-              botly.sendText({ id: senderId, text: "لا يوجد أي تطابق على Pinterest 😓\n• أسباب محتملة 🤔 : \n- الصورة غير موجودة 🚫.\n- الصورة غير واضحة 🫧📱.\n- الصورة غير مناسبة 🔞." });
+              botly.sendText({ id: senderId, text: "Aucun résultat trouvé sur Pinterest 😓\n• Raisons possibles 🤔 : \n- L'image n'existe pas 🚫.\n- L'image est floue 🫧📱.\n- L'image est inappropriée 🔞." });
             }
           } catch (error) {
-            console.error("Error:", error.response.status);
+            console.error("Erreur:", error.response.status);
           }
         },
       );
     } else if (message.message.attachments[0].type == "audio") {
-      botly.sendText({id: senderId, text: "لا يمكن للصفحة البحث بالصوت 🙅‍♂️" }, function (err, data) {
+      botly.sendText({id: senderId, text: "Désolé, la page ne peut pas rechercher avec de l'audio 🙅‍♂️" }, function (err, data) {
         console.log("Data :", data);
         console.log("Err :", err);
       });
     } else if (message.message.attachments[0].type == "video") {
-      botly.sendText({ id: senderId, text: "لا يمكن للصفحة البحث بالفيديوهات 🙅" });
+      botly.sendText({ id: senderId, text: "Désolé, la page ne peut pas rechercher avec des vidéos 🙅" });
     }
   } else {
     await createUser({uid: senderId})
             .then((data, error) => {
               botly.sendButtons({
                 id: senderId,
-                text: "مرحبا لأول مرة 👁️‍🗨️\nأوبتيكا أول صفحة للبحث عن الصور في بينترست 📷😍\nيمكنك :\n- إرسال أي صورة 🖼️ و سيتم البحث عن تطابق لها 📱\n- كتابة أي جملة و ستبحث لك الصفحة عن الصور 🔍\nتقديرا لمجهودنا 🔨 إذا جربت الصفحة و أعجبتك يرجى ترك متابعة ➕🥰\nكود المشاركة الخاص بك : sss",
+                text: "Bienvenue pour la première fois 👁️‍🗨️\nOptica est la première page dédiée à la recherche d'images sur Pinterest 📷😍\nVous pouvez :\n- Envoyer une image 🖼️ et nous rechercherons des correspondances 📱\n- Écrire une phrase et la page effectuera une recherche 🔍\nEn remerciement de notre travail 🔨 Si vous aimez la page et l'avez essayée, merci de nous suivre ➕🥰\nCode de partage : sss",
                 buttons: [
-                  botly.createWebURLButton("حساب المطور 💻👤", "facebook.com/0xNoti/"),
+                  botly.createWebURLButton("Compte du développeur 💻👤", "https://www.facebook.com/lahatra.gameur"),
                 ],
               });
             });
   }
 };
+
 /* ----- POSTBACK ----- */
 
 const onPostBack = async (senderId, message, postback) => {
@@ -223,9 +238,9 @@ const onPostBack = async (senderId, message, postback) => {
               if (response.data.code == 18) {
                 botly.sendButtons({
                   id: senderId,
-                  text: "لا يمكننا البحث عن هذا النوع من الصور 🤷🏻‍♂️🔞\nاذا كنت تعتقد أن هنالك خطأ راسل المطور 💻👇🏻",
+                  text: "Nous ne pouvons pas rechercher ce type d'image 🤷🏻‍♂️🔞\nVeuillez contacter le développeur si vous pensez qu'il y a une erreur 💻👇🏻",
                   buttons: [
-                    botly.createWebURLButton("حساب المطور 💻👤", "facebook.com/0xNoti/"),
+                    botly.createWebURLButton("Compte du développeur 💻👤", "https://www.facebook.com/lahatra.gameur"),
                   ],
                 });
               } else if (response.data.code == 0) {
@@ -234,7 +249,7 @@ const onPostBack = async (senderId, message, postback) => {
                   const numImagesToSend = Math.min(images.length, 6);
                 
                   if (numImagesToSend === 0) {
-                    botly.sendText({ id: senderId, text: "لا يوجد نتائج" });
+                    botly.sendText({ id: senderId, text: "Aucun résultat trouvé" });
                   } else {
                     const shuffledImages = shuffleArray(images);
                 
@@ -247,7 +262,7 @@ const onPostBack = async (senderId, message, postback) => {
                             type: Botly.CONST.ATTACHMENT_TYPE.IMAGE,
                             payload: { url: url },
                             quick_replies: [
-                              botly.createQuickReply("قريبا !", "123"),
+                              botly.createQuickReply("Bientôt !", "123"),
                             ]
                           },
                           () => {});
@@ -257,7 +272,7 @@ const onPostBack = async (senderId, message, postback) => {
                     sendImagesWithDelay();
                   }
                 } else {
-                  botly.sendText({ id: senderId, text: "لا يوجد نتائج" });
+                  botly.sendText({ id: senderId, text: "Aucun résultat trouvé" });
                 }
                 
                 function shuffleArray(array) {
@@ -269,10 +284,10 @@ const onPostBack = async (senderId, message, postback) => {
                   return shuffled;
                 }
               } else {
-                botly.sendText({ id: senderId, text: "لا يوجد نتيجة" });
+                botly.sendText({ id: senderId, text: "Aucun résultat trouvé" });
               }
       } catch (error) {
-        console.error("Error:", error.response.status);
+        console.error("Erreur:", error.response.status);
       }
     } else if (message.message.text == "") {
       //
@@ -280,8 +295,9 @@ const onPostBack = async (senderId, message, postback) => {
     }
   }
 };
+
 /* ----- HANDELS ----- */
 app.listen(3000, () => {
-  console.log(`App is on port : 3000`);
+  console.log(`L'application fonctionne sur le port : 3000`);
   keepAppRunning();
 });
